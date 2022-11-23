@@ -1,0 +1,42 @@
+{
+  "name": "redian-ims-server",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx tsc",
+    "start": "node dist/index.js",
+    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.js\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SwiftDSG/redian-ims.git"
+  },
+  "author": "Kemal Dwi Heldy Muhammad",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SwiftDSG/redian-ims/issues"
+  },
+  "homepage": "https://github.com/SwiftDSG/redian-ims#readme",
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.3",
+    "@types/cors": "^2.8.12",
+    "@types/express": "^4.17.13",
+    "@types/jsonwebtoken": "^8.5.8",
+    "@types/multer": "^1.4.7",
+    "@types/node": "^18.6.1",
+    "concurrently": "^7.3.0",
+    "nodemon": "^2.0.19",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "helmet": "^5.1.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongodb": "^4.8.0",
+    "multer": "^1.4.5-lts.1"
+  }
+}
