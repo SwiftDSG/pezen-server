@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+import { createServer, Server } from 'http'
 
 import express, { Express, Request, Response, NextFunction, json, urlencoded } from "express"
 import dotenv from 'dotenv'
@@ -9,6 +10,7 @@ import path from 'path'
 
 import { connectToDatabase } from './plugins/connections'
 import { verifyAccessToken } from './plugins/tokens'
+import { initSocket } from './plugins/sockets'
 
 dotenv.config()
 
@@ -55,8 +57,12 @@ app
 app
   .use('/files', express.static(path.join(__dirname, 'files')))
 
-app.listen(port, async () => {
+const server: Server = createServer(app)
+
+server.listen(port, async () => {
   try {
+    initSocket(server, allowedURL)
+
     await connectToDatabase()
     console.info(`server listening on http//localhost:${port}`)
   } catch (e) {
