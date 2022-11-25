@@ -11,8 +11,7 @@ const publicRefreshKey: string = readFileSync('./keys/publicRefresh.pem', 'utf-8
 export function generateAccessToken(payload: Request['user']): string {
   const subject: string = payload._id.toString()
   return sign({
-    role_id: payload.role_id,
-    branch_id: payload.branch_id,
+    role: payload.role,
     name: payload.name
   }, privateAccessKey, {
     algorithm: 'RS256',
@@ -40,8 +39,7 @@ export function verifyAccessToken(token: string): Request['user'] {
       audience: process.env.BASE_URL || 'http://localhost:8000'
     })
     const payload: Request['user'] = {
-      branch_id: result.branch_id.map((a: string) => new ObjectId(a)),
-      role_id: result.role_id.map((a: string) => new ObjectId(a)),
+      role: result.role,
       name: result.name,
       _id: new ObjectId(result.sub)
     }
@@ -59,8 +57,7 @@ export function verifyRefreshToken(token: string): Request['user'] {
       audience: process.env.BASE_URL || 'http://localhost:8000'
     })
     const payload: Request['user'] = {
-      branch_id: result.branch_id.map((a: string) => new ObjectId(a)),
-      role_id: result.role_id.map((a: string) => new ObjectId(a)),
+      role: result.role,
       name: result.name,
       _id: new ObjectId(result._id)
     }

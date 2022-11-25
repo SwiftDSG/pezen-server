@@ -5,16 +5,22 @@ import { generateAccessToken, generateRefreshToken } from '../../../plugins/toke
 import { errorHandler } from '../../../plugins/errors'
 import { findUserByEmail } from '../../../connectors/users/find-by-email'
 import { getUserDataById } from '../../../connectors/users/get-data-by-id'
-import { User, UserResponse } from '../../../interfaces/user'
+import { User, UserMinResponse, UserRole } from '../../../interfaces/user'
 
 export async function userPostLoginController(req: Request, res: Response) {
   try {
     const {
+      query: {
+        type
+      },
       body: {
         email,
         password
       }
     }: {
+      query: {
+        type?: UserRole
+      }
       body: {
         email: string
         password: string
@@ -29,14 +35,15 @@ export async function userPostLoginController(req: Request, res: Response) {
 
     const payload: Request['user'] = {
       _id: user._id,
-      role_id: user.role_id,
-      branch_id: user.branch_id,
+      role: user.role,
       name: user.name
     }
     const atk: string = generateAccessToken(payload)
     const rtk: string = generateRefreshToken(payload)
 
-    const userData: UserResponse = await getUserDataById(user._id)
+    const userData: UserMinResponse = await getUserDataById<UserMinResponse>(user._id)
+
+    if (type === 'restaurant' && !userData.role.includes('admin')) throw new Error('UNAUTHORIZED')
 
     res.status(200).send({ atk, rtk, user: userData })
   } catch (e) {

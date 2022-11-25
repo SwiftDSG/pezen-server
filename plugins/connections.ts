@@ -1,28 +1,20 @@
 import * as mongoDB from "mongodb"
 
-import { Branch } from "../interfaces/branch"
-import { Customer } from '../interfaces/customer'
-import { Document } from "../interfaces/document"
-import { Event } from '../interfaces/event'
-import { ProductActivity } from '../interfaces/product-activity'
-import { ProductStock } from '../interfaces/product-stock'
-import { Product } from '../interfaces/product'
-import { Supplier } from '../interfaces/supplier'
+import { Event } from "../interfaces/event"
+import { Menu } from "../interfaces/menu"
+import { Order } from "../interfaces/order"
+import { Restaurant } from "../interfaces/restaurant"
+import { Task } from "../interfaces/task"
 import { Transaction } from "../interfaces/transaction"
-import { UserRole } from '../interfaces/user-role'
 import { User } from '../interfaces/user'
 
 interface Collections {
-  branches?: mongoDB.Collection<Branch>
-  customers?: mongoDB.Collection<Customer>
-  documents?: mongoDB.Collection<Document>
   events?: mongoDB.Collection<Event>
-  productActivities?: mongoDB.Collection<ProductActivity>
-  productStocks?: mongoDB.Collection<ProductStock>
-  products?: mongoDB.Collection<Product>
-  suppliers?: mongoDB.Collection<Supplier>
+  menus?: mongoDB.Collection<Menu>
+  orders?: mongoDB.Collection<Order>
+  restaurants?: mongoDB.Collection<Restaurant>
+  tasks?: mongoDB.Collection<Task>
   transactions?: mongoDB.Collection<Transaction>
-  userRoles?: mongoDB.Collection<UserRole>
   users?: mongoDB.Collection<User>
 }
 
@@ -34,15 +26,11 @@ export async function connectToDatabase(): Promise<void> {
 
   const db: mongoDB.Db = client.db(process.env.MONGO_DB_NAME || 'redian-ims')
 
-  collections.branches = db.collection<Branch>('branches')
-  collections.customers = db.collection<Customer>('customers')
-  collections.documents = db.collection<Document>('documents')
   collections.events = db.collection<Event>('events')
-  collections.productActivities = db.collection<ProductActivity>('product-activities')
-  collections.productStocks = db.collection<ProductStock>('product-stocks')
-  collections.products = db.collection<Product>('products')
-  collections.suppliers = db.collection<Supplier>('suppliers')
+  collections.menus = db.collection<Menu>('menus')
+  collections.orders = db.collection<Order>('orders')
+  collections.restaurants = db.collection<Restaurant>('restaurants')
+  collections.tasks = db.collection<Task>('tasks')
   collections.transactions = db.collection<Transaction>('transactions')
-  collections.userRoles = db.collection<UserRole>('user-roles')
   collections.users = db.collection<User>('users')
 }

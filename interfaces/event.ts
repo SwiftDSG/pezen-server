@@ -1,18 +1,22 @@
 import { ObjectId } from "mongodb"
 import { ErrorMessage } from "../plugins/errors"
+import { UserRole } from "./user"
 
-import { UserRoleAction } from "./user-role"
+type EventActionUser = 'user-put'
+type EventActionRestaurant = 'restaurant-post' | 'restaurant-put'
+
+export type EventAction = EventActionUser | EventActionRestaurant
 
 interface EventUser {
   _id: ObjectId
-  role_id: ObjectId[]
+  role: UserRole[]
   name: string
 }
 
 export interface EventBase {
   type: 'action' | 'system' | 'error'
   date: Date
-  action?: UserRoleAction
+  action?: EventActionUser | EventActionRestaurant
   before_data?: any
   after_data?: any
   error_message?: ErrorMessage

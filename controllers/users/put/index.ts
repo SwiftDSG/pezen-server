@@ -1,106 +1,68 @@
 import { Request, Response } from 'express'
-import { InsertOneResult, ObjectId } from 'mongodb'
+import { ObjectId, UpdateResult } from 'mongodb'
 
-import { UserBody, User, UserBase } from '../../../interfaces/user'
-import { UserRole } from '../../../interfaces/user-role'
-import { Branch } from '../../../interfaces/branch'
-import { createUserRole } from '../../../connectors/user-roles/create'
-import { createUser } from '../../../connectors/users/create'
-import { findUsersByQuery } from '../../../connectors/users/find-by-query'
-import { findUserByEmail } from '../../../connectors/users/find-by-email'
-import { findUserRoleById } from '../../../connectors/user-roles/find-by-id'
-import { findBranchById } from '../../../connectors/branches/find-by-id'
+import { UserBody, User } from '../../../interfaces/user'
 import { errorHandler } from '../../../plugins/errors'
 import { verifyAction } from '../../../plugins/authentication'
-import { addEvent } from '../../../plugins/events'
+import { findUserById } from '../../../connectors/users/find-by-id'
+import { updateUser } from '../../../connectors/users/update'
+import { usersImageHandler } from '../../../plugins/multipart'
+import { deleteFile } from '../../../plugins/files'
+import { verifyAddress } from '../../../plugins/helpers'
+import { Address } from '../../../interfaces/general'
 
 export async function userPutController(req: Request, res: Response) {
   try {
+    await usersImageHandler(req, res)
     const {
-      body: {
-        role_id,
-        branch_id,
-        name,
-        email,
-        password,
-        phone,
-        birth_date,
+      params: {
+        _id
       },
-      user
+      body: {
+        name,
+        password,
+        birth_date,
+        phone,
+        address
+      },
+      user,
+      file
     }: {
+      params: {
+        _id?: string
+      },
       body: UserBody,
-      user?: Request['user']
+      user?: Request['user'],
+      file?: Request['file']
     } = req
+    if (!await verifyAction(user, 'user-put')) throw new Error('UNAUTHORIZED')
 
-    let createOwner: boolean = false
-    if (!user) {
-      const users: User[] = await findUsersByQuery({})
-      if (users.length) throw new Error('UNAUTHORIZED')
-      createOwner = true
-    } else if (!await verifyAction(user, 'create-user')) throw new Error('UNAUTHORIZED')
+    const issuer: User = await findUserById(new ObjectId(_id))
+    if (!issuer) throw new Error('USER_NOT_FOUND')
 
-    if (!name || typeof name !== 'string') throw new Error('USER_MUST_HAVE_VALID_NAME')
-    if (!email || typeof email !== 'string') throw new Error('USER_MUST_HAVE_VALID_EMAIL')
-    if (!password || typeof password !== 'string' || password.length < 8) throw new Error('USER_MUST_HAVE_VALID_PASSWORD')
-    if (isNaN(new Date(birth_date).getTime())) throw new Error('USER_MUST_HAVE_VALID_BIRTH_DATE')
-
-    const roleIds: ObjectId[] = []
-    const branchIds: ObjectId[] = []
-    if (createOwner) {
-      const { insertedId: ownerRoleId }: InsertOneResult = await createUserRole({
-        name: 'owner',
-        color: '#000000',
-        action: ['all'],
-        owner: true
-      })
-
-      roleIds.push(ownerRoleId)
-    } else {
-      if (!role_id?.length) throw new Error('USER_MUST_HAVE_VALID_ROLE')
-      if (!branch_id?.length) throw new Error('USER_MUST_HAVE_VALID_BRANCH')
-
-      const userWithSameEmail: User = await findUserByEmail(email)
-      if (userWithSameEmail) throw new Error('USER_MUST_HAVE_UNIQUE_EMAIL')
-
-      for (const id of role_id) {
-        const role: UserRole = await findUserRoleById(new ObjectId(id))
-        if (!role) throw new Error('USER_MUST_HAVE_VALID_ROLE')
-        roleIds.push(new ObjectId(id))
+    if (name && typeof name === 'string') issuer.name === name
+    if (phone && typeof phone === 'string') issuer.phone === phone
+    if (password && (typeof password !== 'string' || password.length < 8)) issuer.password = password
+    if (!isNaN(new Date(birth_date).getTime())) issuer.birth_date = new Date(birth_date)
+    if (file) {
+      if (issuer.image_url) await deleteFile(issuer.image_url)
+      issuer.image_url = `/users/${_id}/${file.filename}`
+    }
+    if (address && address.length) {
+      const addresses: Address[] = []
+      for (let i: number = 0; i < address.length; i++) {
+        const verifiedAddress: Address = await verifyAddress(address[i])
+        addresses.push({
+          ...verifiedAddress
+        })
       }
+      issuer.address = addresses
+    } else if (address && !address.length) issuer.address = []
 
-      for (const id of branch_id) {
-        const branch: Branch = await findBranchById(new ObjectId(id))
-        if (!branch) throw new Error('USER_MUST_HAVE_VALID_BRANCH')
-        branchIds.push(new ObjectId(id))
-      }
-    }
+    const { modifiedCount }: UpdateResult = await updateUser(issuer)
+    if (!modifiedCount) throw new Error('USER_NOT_UPDATED')
 
-    const payload: UserBase = {
-      name,
-      email,
-      password,
-      phone,
-      birth_date: new Date(birth_date),
-      create_date: new Date(),
-      status: 'active'
-    }
-
-    const { insertedId: newUserId }: InsertOneResult = await createUser(payload, roleIds, branchIds)
-
-    if (!createOwner) {
-      await addEvent({
-        type: 'action',
-        action: 'create-user',
-        date: new Date(),
-        after_data: {
-          ...payload,
-          _id: newUserId
-        },
-        user,
-      })
-    }
-
-    res.status(201).send(newUserId.toString())
+    res.status(200).send(issuer)
   } catch (e) {
     errorHandler(e, res)
   }
