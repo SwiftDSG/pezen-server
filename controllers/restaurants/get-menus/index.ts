@@ -4,7 +4,7 @@ import { getRestaurantDataMenusByCode } from "../../../connectors/restaurants/ge
 import { RestaurantMenusResponse } from "../../../interfaces/restaurant";
 import { errorHandler } from "../../../plugins/errors";
 
-export async function restaurantGetDataController(req: Request, res: Response): Promise<void> {
+export async function restaurantGetMenusController(req: Request, res: Response): Promise<void> {
   try {
     const {
       params: {
